@@ -3,14 +3,14 @@
     "public": true,
     "builds" : [
         {
-            "src": "src/server.js",
+            "src": "app.js",
             "use": "@vercel/node"
         }
     ],
     "routes" : [
         {
             "src": "/(.*)",
-            "dest": "src/server.js",
+            "dest": "app.js",
             "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
             "headers": {
               "Access-Control-Allow-Origin": "*"
