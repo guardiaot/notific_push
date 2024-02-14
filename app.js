@@ -52,6 +52,9 @@ const myDate = new Date(Date.now()).toLocaleString().split(',')[0];
 
 io.use((socket, next) => {
     const key = socket.handshake.auth.key;
+
+    console.log(key)
+
     if (key !== secretKey) {
         return next(new Error('Authentication error'));
     }
