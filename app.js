@@ -6,8 +6,10 @@ var app = express();
 const { Interface } = require("readline");
 const { connect } = require("http2");
 var http = require('http');
-const { SourceTextModule } = require("vm");
+
 const { type } = require("os");
+
+const socketio = require('socket.io');
 
 
 
@@ -36,7 +38,7 @@ app.use(cors())
 app.use(bodyparser.json())
 // create http server from express instance
 var server = http.createServer(app);
-var io = require('socket.io')(server, {
+const io = socketio(server, {
     cors: {
         origin: "*",
         methods: ["GET", "POST"],
@@ -52,9 +54,6 @@ const myDate = new Date(Date.now()).toLocaleString().split(',')[0];
 
 io.use((socket, next) => {
     const key = socket.handshake.auth.key;
-
-    console.log(key)
-
     if (key !== secretKey) {
         return next(new Error('Authentication error'));
     }
@@ -74,11 +73,9 @@ io.on('connection', socket => {
         io.emit('updatechat', data);
     });
 
-    socket.on('snd_orcamento', async function (data) {      
-        
-        
-       var retorno =  trata_json_essencial(data.text)
+    socket.on('snd_orcamento', async function (data) {
 
+        var retorno = trata_json_essencial(data.text)
         retorno = JSON.parse(retorno)
         io.emit(data.channel, retorno);
     });
@@ -114,97 +111,97 @@ async function buscaUsuarioSuporte() {
 */
 
 
-function trata_json_essencial(json){
+function trata_json_essencial(json) {
 
-        json = JSON.parse(json);
+    json = JSON.parse(json);
 
-        if(json) {
-                var estado =  json['porto_seguro_essencial'];
-                var njson = json['porto_seguro_essencial']['result']['ofertas'];
-                //console.log(njson)
+    if (json) {
+        var estado = json['porto_seguro_essencial'];
+        var njson = json['porto_seguro_essencial']['result']['ofertas'];
+        //console.log(njson)
 
-                var newFAT = new Array();
+        var newFAT = new Array();
 
-                var avista_cc = 0;
-                var parcela_um_cc = 0
-                var ultma_pacela_cc = 0;
-                var qtd_pacelas_cc =0;
+        var avista_cc = 0;
+        var parcela_um_cc = 0
+        var ultma_pacela_cc = 0;
+        var qtd_pacelas_cc = 0;
 
-                var avista_bca = 0;
-                var parcela_um_bca = 0;
-                var ultma_pacela_bca = 0;
-                var qtd_pacelas_bca =0;
+        var avista_bca = 0;
+        var parcela_um_bca = 0;
+        var ultma_pacela_bca = 0;
+        var qtd_pacelas_bca = 0;
 
-                var avista_fat = 0;
-                var parcela_um_fat = 0
-                var ultma_pacela_fat = 0;
-                var qtd_pacelas_fat =0;
+        var avista_fat = 0;
+        var parcela_um_fat = 0
+        var ultma_pacela_fat = 0;
+        var qtd_pacelas_fat = 0;
 
-                var pagamento = '';
+        var pagamento = '';
 
-                var forma = '';
+        var forma = '';
 
-                for(var i=0; i< njson.length; i++){
-                
-                            njson[i].formasPagamento.map ((val) => {
+        for (var i = 0; i < njson.length; i++) {
 
-                                            if(val.formaPagamento == "CC"){
-                                                        avista_cc = [...val.condicoesPagamento].shift();
-                                                        parcela_um_cc = val.condicoesPagamento[1];
-                                                        ultma_pacela_cc = [...val.condicoesPagamento].pop();
-                                                        qtd_pacelas_cc = val.condicoesPagamento.length;
-                                                        forma = val.formaPagamento;
-                                            }
-                                            if(val.formaPagamento == "BCA"){
-                                                        avista_bca = [...val.condicoesPagamento].shift() ?? 0;
-                                                        parcela_um_bca = val.condicoesPagamento[1] ?? 0;
-                                                        ultma_pacela_bca = [...val.condicoesPagamento].pop() ?? 0;
-                                                        qtd_pacelas_bca = val.condicoesPagamento.length;
-                                                        forma = val.formaPagamento;
-                                            }
+            njson[i].formasPagamento.map((val) => {
 
-                                            if(val.formaPagamento == "FAT"){
-                                                        avista_fat = [...val.condicoesPagamento].shift();
-                                                        parcela_um_fat = val.condicoesPagamento[1];
-                                                        ultma_pacela_fat = [...val.condicoesPagamento].pop();
-                                                        qtd_pacelas_fat = val.condicoesPagamento.length;
-                                                        forma= val.formaPagamento;
-                                            }
-                                        
-                                    
-                                            pagamento = JSON.stringify(val.condicoesPagamento)
+                if (val.formaPagamento == "CC") {
+                    avista_cc = [...val.condicoesPagamento].shift();
+                    parcela_um_cc = val.condicoesPagamento[1];
+                    ultma_pacela_cc = [...val.condicoesPagamento].pop();
+                    qtd_pacelas_cc = val.condicoesPagamento.length;
+                    forma = val.formaPagamento;
+                }
+                if (val.formaPagamento == "BCA") {
+                    avista_bca = [...val.condicoesPagamento].shift() ?? 0;
+                    parcela_um_bca = val.condicoesPagamento[1] ?? 0;
+                    ultma_pacela_bca = [...val.condicoesPagamento].pop() ?? 0;
+                    qtd_pacelas_bca = val.condicoesPagamento.length;
+                    forma = val.formaPagamento;
+                }
 
-                            })
-
-                            newFAT.push({
-                                        "nomeSeguro": njson[i].nomeSeguro, 
-                                        "valor_avista": avista_fat.valorParcela,
-                                        "parcela_inicial": parcela_um_fat.valorParcela,
-                                        "total_parcela" : qtd_pacelas_fat,
-                                        "ultima_parcela": ultma_pacela_fat.valorParcela,
-                                        'seguro' :njson[i].seguro,
-                                        'forma' : forma ,
-                                        'avista_cc' : avista_cc.valorParcela,
-                                        'parcela_um_cc' :parcela_um_cc.valorParcela,
-                                        'ultma_pacela_cc': ultma_pacela_cc.valorParcela,
-                                        'qtd_pacelas_cc' : qtd_pacelas_cc,
-                                        'avista_bca' :avista_bca.valorParcela,
-                                        'parcela_um_bca': parcela_um_bca.valorParcela,
-                                        'ultma_pacela_bca' : ultma_pacela_bca.valorParcela,
-                                        'qtd_pacelas_bca' : qtd_pacelas_bca,
-                                        'parcelas' : pagamento,
-                                        'status' : estado.aprovado,
-                                        'mensagem': estado.message
-                            }); 
-
+                if (val.formaPagamento == "FAT") {
+                    avista_fat = [...val.condicoesPagamento].shift();
+                    parcela_um_fat = val.condicoesPagamento[1];
+                    ultma_pacela_fat = [...val.condicoesPagamento].pop();
+                    qtd_pacelas_fat = val.condicoesPagamento.length;
+                    forma = val.formaPagamento;
                 }
 
 
-                console.log(newFAT)
-                return JSON.stringify(newFAT);
+                pagamento = JSON.stringify(val.condicoesPagamento)
 
-        } else{
-                 return json = []
+            })
+
+            newFAT.push({
+                "nomeSeguro": njson[i].nomeSeguro,
+                "valor_avista": avista_fat.valorParcela,
+                "parcela_inicial": parcela_um_fat.valorParcela,
+                "total_parcela": qtd_pacelas_fat,
+                "ultima_parcela": ultma_pacela_fat.valorParcela,
+                'seguro': njson[i].seguro,
+                'forma': forma,
+                'avista_cc': avista_cc.valorParcela,
+                'parcela_um_cc': parcela_um_cc.valorParcela,
+                'ultma_pacela_cc': ultma_pacela_cc.valorParcela,
+                'qtd_pacelas_cc': qtd_pacelas_cc,
+                'avista_bca': avista_bca.valorParcela,
+                'parcela_um_bca': parcela_um_bca.valorParcela,
+                'ultma_pacela_bca': ultma_pacela_bca.valorParcela,
+                'qtd_pacelas_bca': qtd_pacelas_bca,
+                'parcelas': pagamento,
+                'status': estado.aprovado,
+                'mensagem': estado.message
+            });
+
         }
+
+
+        //    console.log(newFAT)
+        return JSON.stringify(newFAT);
+
+    } else {
+        return json = []
+    }
 
 }
