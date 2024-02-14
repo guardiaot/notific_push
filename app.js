@@ -9,6 +9,12 @@ var http = require('http');
 const { SourceTextModule } = require("vm");
 const { type } = require("os");
 
+
+
+const secretKey = 'a3Npc2VndXJvMjAyNA==';
+
+
+/*
 async function database() {
     if (global.connection && global.connection !== 'disconnected')
         return global.connection;
@@ -24,7 +30,7 @@ async function database() {
     global.connection = connection;
     return connection;
 }
-
+*/
 
 app.use(cors())
 app.use(bodyparser.json())
@@ -44,7 +50,13 @@ var usernames = [];
 const myDate = new Date(Date.now()).toLocaleString().split(',')[0];
 
 
-
+io.use((socket, next) => {
+    const key = socket.handshake.auth.key;
+    if (key !== secretKey) {
+        return next(new Error('Authentication error'));
+    }
+    next();
+});
 
 io.on('connection', socket => {
     console.log('new user connectado');
@@ -86,6 +98,8 @@ server.listen(5000, () => {
     console.log('Server listening on :5000');
 });
 
+/*
+
 async function buscaUsuarioSuporte() {
     const conn = await database();
     const sql = 'SELECT * FROM chat_usuarios where tipo_usuario = ?';
@@ -94,6 +108,7 @@ async function buscaUsuarioSuporte() {
     return rows;
 }
 
+*/
 
 
 function trata_json_essencial(json){
